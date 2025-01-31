@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCM - Mi Panel</title>
+    <link rel="stylesheet" href="../static/css/estilo.css">
+    <link rel="icon" href="../static/img/favicon/favicon.ico" type="image/x-icon">
+    <script src="https://kit.fontawesome.com/9a6207fa2d.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <img src="../static/img/Captura de pantalla 2025-01-29 222940.png" alt="logo de pagina" class="logo-img">
+            </a>
+            <nav class="navbar">
+            <a href="../index.html">Inicio</a>
+                    <a href="./crear_evento.html">Crear Evento</a>
+                    <a href="./eventos.html">Eventos</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="user-info container">
+            <h2>Bienvenido, <span id="user-name"></span></h2>
+            <p>Email: <span id="user-email"></span></p>
+        </section>
+
+        <section class="user-panel container">
+          
+            <div class="panel-section" id="eventos-organizados">
+                <h3>Mis Eventos Organizados</h3>
+                <div class="eventos-grid" id="eventos-organizados-container"></div>
+            </div>
+
+         
+            <div class="panel-section" id="mis-reservas">
+                <h3>Mis Reservas</h3>
+                <div class="reservas-list" id="reservas-container"></div>
+            </div>
+
+       
+            <div class="panel-section" id="eventos-favoritos">
+                <h3>Eventos Favoritos</h3>
+                <div class="eventos-grid" id="favoritos-container"></div>
+            </div>
+        </section>
+    </main>
+
+
+    <template id="evento-card-template">
+        <article class="evento-card">
+            <div class="evento-imagen">
+                <img src="default-image.jpg" alt="">
+            </div>
+            <div class="evento-info">
+                <h4 class="evento-titulo"></h4>
+                <p class="evento-fecha"></p>
+                <p class="evento-horario"></p>
+                <p class="evento-estado"></p>
+                <div class="evento-acciones"></div>
+            </div>
+        </article>
+    </template>
+
+   
+    <template id="reserva-card-template">
+        <article class="reserva-card">
+            <div class="reserva-info">
+                <h4 class="reserva-evento"></h4>
+                <p class="reserva-fecha"></p>
+                <p class="reserva-estado"></p>
+                <p class="reserva-codigo"></p>
+                <div class="reserva-acciones"></div>
+            </div>
+        </article>
+    </template>
+    <footer>
+        <div class="container">
+         <span>   &copy; Centro Cultural Municipal 2025&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Contacta con nosotros: Tel.: 112480034 - <a href="">Email:ccm@ccm.salta</a></strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Derechos Reservados Grupo 6</span> 
+    
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../static/js/panel-usuario.js"></script>
+</body>
+</html>

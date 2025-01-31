@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCM - Detalle de Evento</title>
+    <link rel="stylesheet" href="../static/css/estilo.css">
+    <link rel="icon" href="../static/img/favicon/favicon.ico" type="image/x-icon">
+    <script src="https://kit.fontawesome.com/9a6207fa2d.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <img src="../static/img/Captura de pantalla 2025-01-29 222940.png" alt="logo de pagina" class="logo-img">
+            </a>
+            <nav class="navbar">
+            <a href="../index.html">Inicio</a>
+                    <a href="./panel-usuario.html">Mi Panel</a>
+                    <a href="./crear_evento.html">Crear Evento</a>
+                    <a href="./eventos.html">Eventos</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="evento-detalle" class="container">
+            <div class="evento-detalle-grid">
+                <div class="evento-imagen-detalle">
+                    <img id="evento-imagen" src="../static/img/default-evento.png" alt="Imagen del evento">
+                </div>
+                <div class="evento-info-detalle">
+                    <h1 id="evento-titulo"></h1>
+                    <div class="evento-metadata">
+                        <p><strong>Fecha:</strong> <span id="evento-fecha"></span></p>
+                        <p><strong>Horario:</strong> <span id="evento-horario"></span></p>
+                        <p><strong>Salón:</strong> <span id="evento-salon"></span></p>
+                        <p><strong>Categoría:</strong> <span id="evento-categoria"></span></p>
+                        <p><strong>Precio:</strong> <span id="evento-precio"></span></p>
+                        <p><strong>Estado:</strong> <span id="evento-estado"></span></p>
+                    </div>
+                    <div class="evento-descripcion">
+                        <h3>Descripción</h3>
+                        <p id="evento-descripcion"></p>
+                    </div>
+                    <div class="evento-contacto">
+                        <h3>Información de contacto</h3>
+                        <p id="evento-contacto"></p>
+                    </div>
+                    <div class="evento-organizador">
+                        <p><strong>Organizado por:</strong> <span id="evento-organizador"></span></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="reserva-section" class="container">
+            <form id="reserva-form" class="formulario">
+                <h3>Hacer Reserva</h3>
+                <div class="form-group">
+                    <label for="cantidad">Cantidad de Entradas:</label>
+                    <input type="number" id="cantidad" name="cantidad" min="1" required>
+                    <p id="max-entradas-info" class="info-text"></p>
+                </div>
+                <button type="submit" class="btn-1">Reservar</button>
+            </form>
+        </section>
+
+       
+        <section id="lista-asistentes" class="container" style="display: none;">
+            <h3>Lista de Asistentes</h3>
+            <div id="asistentes-container" class="asistentes-grid"></div>
+        </section>
+    </main>
+    <footer>
+        <div class="container">
+         <span>   &copy; Centro Cultural Municipal 2025&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Contacta con nosotros: Tel.: 112480034 - <a href="">Email:ccm@ccm.salta</a></strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Derechos Reservados Grupo 6</span> 
+    
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../static/js/evento-detalle.js"></script>
+</body>
+</html>
