@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCM - Eventos</title>
+    <link rel="stylesheet" href="../static/css/estilo.css">
+    <link rel="icon" href="../static/img/favicon/favicon.ico" type="image/x-icon">
+    <script src="https://kit.fontawesome.com/9a6207fa2d.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <img src="../static/img/Captura de pantalla 2025-01-29 222940.png" alt="logo de pagina" class="logo-img">
+            </a>
+            <nav class="navbar">
+            <a href="../index.html">Inicio</a>
+                    <a href="./panel-usuario.html">Mi Panel</a>
+                    <a href="./crear_evento.html">Crear Evento</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="eventos-search container">
+            <h2>Eventos CCM</h2>
+            <div class="search-filters">
+                <div class="filter-group">
+                    <input type="text" id="search-nombre" placeholder="Buscar por nombre..." class="input-search">
+                </div>
+                <div class="filter-group">
+                    <select id="filter-categoria" class="input-search">
+                        <option value="">Todas las categorías</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <input type="date" id="filter-fecha" class="input-search">
+                </div>
+                <div class="filter-group">
+                    <input type="number" id="filter-precio-min" placeholder="Precio mínimo" class="input-search">
+                    <input type="number" id="filter-precio-max" placeholder="Precio máximo" class="input-search">
+                </div>
+                <button id="btn-search" class="btn-1">Buscar</button>
+                <button id="btn-reset" class="btn-2">Limpiar filtros</button>
+            </div>
+        </section>
+
+        <section class="eventos-grid container">
+            <div id="eventos-container" class="eventos-list">
+            
+            </div>
+        </section>
+    </main>
+
+   
+    <template id="evento-template">
+        <article class="evento-card">
+            <div class="evento-imagen">
+                <img src="../static/img/default-image.png" alt="Imagen del evento">
+            </div>
+            <div class="evento-info">
+                <h3 class="evento-titulo"></h3>
+                <p class="evento-fecha"></p>
+                <p class="evento-horario"></p>
+                <p class="evento-salon"></p>
+                <p class="evento-categoria"></p>
+                <p class="evento-precio"></p>
+                <div class="evento-acciones">
+                    <button class="btn-1 ver-mas">Ver más</button>
+                    <button class="btn-2 favorito">❤</button>
+                </div>
+            </div>
+        </article>
+    </template>
+    <footer>
+        <div class="container">
+         <span>   &copy; Centro Cultural Municipal 2025&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Contacta con nosotros: Tel.: 112480034 - <a href="">Email:ccm@ccm.salta</a></strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Derechos Reservados Grupo 6</span> 
+    
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../static/js/eventos.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HALLCROSS - Crear Evento</title>
+    <link rel="stylesheet" href="../static/css/estilo.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <img src="../static/img/Captura de pantalla 2025-01-29 222940.png" alt="logo de pagina" class="logo-img">
+            </a>
+            <nav class="navbar">
+            <a href="../index.html">Inicio</a>
+                    <a href="./eventos.html">Eventos</a>
+                    <a href="./panel-usuario.html">Mi Panel</a>
+                  
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="form" class="container">
+            <h2>Crear Evento</h2>
+            <form id="form-evento" class="formulario">
+                <input type="hidden" id="id-evento">
+                
+                <div class="form-control">
+                    <label for="nombre">Nombre del Evento</label>
+                    <input type="text" id="nombre" name="nombre" required class="input-search">
+                </div>
+
+                <div class="form-control">
+                    <label for="fecha">Fecha</label>
+                    <input type="date" id="fecha" name="fecha" required class="input-search">
+                </div>
+
+                <div class="form-control">
+                    <label for="horario">Horario</label>
+                    <select id="horario" name="horario" required class="input-search">
+                        <option value="">Seleccione horario</option>
+                        <option value="mañana">Mañana</option>
+                        <option value="tarde">Tarde</option>
+                        <option value="noche">Noche</option>
+                    </select>
+                </div>
+
+                <div class="form-control">
+                    <label for="salon">Salón</label>
+                    <select id="salon" name="salon" required class="input-search">
+                        <option value="">Cargando salones...</option>
+                    </select>
+                </div>
+
+                <div class="form-control">
+                    <label for="categoria">Categoría</label>
+                    <select id="categoria" name="categoria" required class="input-search">
+                        <option value="">Cargando categorías...</option>
+                    </select>
+                </div>
+
+                <div class="form-control">
+                    <label for="precio">Precio</label>
+                    <input type="number" id="precio" name="precio" min="0" step="0.01" required class="input-search">
+                </div>
+
+                <div class="form-control">
+                    <label for="descripcion">Descripción</label>
+                    <textarea id="descripcion" name="descripcion" rows="4" required class="input-search"></textarea>
+                </div>
+
+                <div class="form-control">
+                    <label for="imagen">URL de la imagen</label>
+                    <input type="url" id="imagen" name="imagen" required class="input-search">
+                </div>
+
+                <div class="form-control">
+                    <label for="contacto">Información de contacto</label>
+                    <input type="text" id="contacto" name="contacto" required class="input-search">
+                </div>
+
+                <button type="submit" class="btn-1">Guardar Evento</button>
+            </form>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../static/js/create_evento.js"></script>
+</body>
+</html>
