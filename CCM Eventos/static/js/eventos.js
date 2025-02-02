@@ -180,7 +180,7 @@ function createEventoElement(evento) {
     
         const img = clone.querySelector('.evento-imagen img');
         if (img) {
-            img.src = evento.imagen_url || '../static/img/evento-default.jpg';
+            img.src = evento.imagen_url || '../static/img/default-evento.jpg';
             img.alt = evento.nombre || 'Imagen del evento';
         }
 

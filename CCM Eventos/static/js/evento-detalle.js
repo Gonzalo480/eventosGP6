@@ -1,24 +1,36 @@
 const BASEURL = 'http://127.0.0.1:5000/api';
-let eventoData = null;
+
 
 function formatDate(dateString) {
-    const options = { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    };
-    return new Date(dateString).toLocaleDateString('es-ES', options);
+    try {
+        return new Date(dateString).toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    } catch (error) {
+        console.error('Error formateando fecha:', error);
+        return dateString;
+    }
 }
 
 function formatCurrency(amount) {
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS'
-    }).format(amount || 0);
+    try {
+        return new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS'
+        }).format(amount || 0);
+    } catch (error) {
+        console.error('Error formateando moneda:', error);
+        return `$${amount || 0}`;
+    }
 }
 
+
 async function fetchDataWithAuth(url, method, data = null) {
+    console.log('Fetching:', url, method);
+
     const token = localStorage.getItem('token');
     if (!token) {
         window.location.href = 'login.html';
@@ -35,156 +47,222 @@ async function fetchDataWithAuth(url, method, data = null) {
 
     if (data) {
         options.body = JSON.stringify(data);
+        console.log('Request data:', data);
     }
 
     try {
         const response = await fetch(url, options);
+        console.log('Response status:', response.status);
+
         if (response.status === 401) {
             localStorage.removeItem('token');
             window.location.href = 'login.html';
             return null;
         }
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return await response.json();
+
+        const responseData = await response.json();
+        console.log('Response data:', responseData);
+        return responseData;
     } catch (error) {
         console.error('Fetch error:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Error al cargar los datos'
+            text: 'Error al procesar la solicitud'
         });
         return null;
     }
 }
 
+
 function displayEventoDetalle(evento) {
-    console.log('Mostrando evento:', evento); 
+    console.log('Mostrando evento:', evento);
+    
+    const container = document.querySelector('#evento-detalle');
+    if (!container) {
+        console.error('No se encontró el contenedor del evento');
+        return;
+    }
 
-    
-    document.getElementById('evento-imagen').src = evento.imagen_url || '../static/img/evento-default.jpg';
-    document.getElementById('evento-imagen').alt = evento.nombre;
+    container.innerHTML = `
+        <div class="evento-detalle-grid">
+            <div class="evento-imagen-detalle">
+                <img src="${evento.imagen_url || '../static/img/default-evento.jpg'}" 
+                     alt="${evento.nombre}" 
+                     onerror="this.src='../static/img/default-evento.jpg'; this.onerror=null;"
+                     class="evento-imagen">
+            </div>
+            <div class="evento-info-detalle">
+                <h1 class="evento-titulo">${evento.nombre || 'Sin título'}</h1>
+                
+                <div class="evento-metadata">
+                    <p><strong>Fecha:</strong> ${formatDate(evento.fecha)}</p>
+                    <p><strong>Horario:</strong> ${evento.horario || 'No especificado'}</p>
+                    <p><strong>Salón:</strong> ${evento.salon_nombre || 'No especificado'}</p>
+                    <p><strong>Categoría:</strong> ${evento.categoria_nombre || 'Sin categoría'}</p>
+                    <p><strong>Precio:</strong> ${formatCurrency(evento.precio)}</p>
+                    <p><strong>Estado:</strong> ${evento.estado || 'No especificado'}</p>
+                </div>
 
-    
-    document.getElementById('evento-titulo').textContent = evento.nombre;
-    document.getElementById('evento-fecha').textContent = formatDate(evento.fecha);
-    document.getElementById('evento-horario').textContent = evento.horario;
-    document.getElementById('evento-salon').textContent = evento.salon_nombre;
-    document.getElementById('evento-categoria').textContent = evento.categoria_nombre;
-    document.getElementById('evento-precio').textContent = formatCurrency(evento.precio);
-    document.getElementById('evento-estado').textContent = evento.estado;
-    
-   
-    document.getElementById('evento-descripcion').textContent = evento.descripcion || 'No hay descripción disponible.';
-    document.getElementById('evento-contacto').textContent = evento.contacto_responsable;
-    document.getElementById('evento-organizador').textContent = evento.organizador_nombre;
+                <div class="evento-descripcion">
+                    <h3>Descripción</h3>
+                    <p>${evento.descripcion || 'No hay descripción disponible.'}</p>
+                </div>
 
-    
-    const reservaSection = document.getElementById('reserva-section');
-    if (evento.estado === 'activo') {
-        reservaSection.style.display = 'block';
-        document.getElementById('max-entradas-info').textContent = 
-            `Máximo ${evento.max_entradas_por_persona || 1} entradas por persona`;
-    } else {
-        reservaSection.style.display = 'none';
+                <div class="evento-contacto">
+                    <h3>Información de contacto</h3>
+                    <p>${evento.contacto_responsable || 'No hay información de contacto disponible.'}</p>
+                </div>
+
+                <div class="evento-organizador">
+                    <p><strong>Organizado por:</strong> ${evento.organizador_nombre || 'No especificado'}</p>
+                </div>
+
+                ${evento.estado === 'activo' ? `
+                    <div class="evento-acciones">
+                        <button onclick="mostrarFormularioReserva()" class="btn-1">Reservar</button>
+                        <button onclick="toggleFavorito(${evento.id})" 
+                                class="btn-2 ${evento.es_favorito ? 'active' : ''}"
+                                title="${evento.es_favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}">
+                            ${evento.es_favorito ? '❤️' : '🤍'}
+                        </button>
+                    </div>
+                ` : '<p class="evento-estado-inactivo">Este evento no está disponible para reservas</p>'}
+            </div>
+        </div>
+
+        <div id="formulario-reserva" style="display: none;" class="formulario-reserva">
+            <h3>Realizar Reserva</h3>
+            <form id="form-reserva" class="form-reserva">
+                <div class="form-control">
+                    <label for="cantidad">Cantidad de entradas:</label>
+                    <input type="number" id="cantidad" name="cantidad" min="1" 
+                           max="${evento.max_entradas_por_persona || 1}" required>
+                    <p class="help-text">Máximo ${evento.max_entradas_por_persona || 1} entradas por persona</p>
+                </div>
+                <button type="submit" class="btn-1">Confirmar Reserva</button>
+            </form>
+        </div>
+    `;
+
+  
+    if (evento.estado === 'finalizado' || evento.estado === 'cancelado') {
+        Swal.fire({
+            icon: 'info',
+            title: 'Evento no disponible',
+            text: 'Este evento ya no está disponible para reservas'
+        });
     }
 }
 
+
 async function loadEventoDetalle() {
     try {
+        console.log('Cargando detalle del evento...');
         const urlParams = new URLSearchParams(window.location.search);
         const eventoId = urlParams.get('id');
         
         if (!eventoId) {
+            console.log('No se proporcionó ID de evento');
             window.location.href = 'eventos.html';
             return;
         }
 
-        eventoData = await fetchDataWithAuth(`${BASEURL}/eventos/${eventoId}`, 'GET');
-        console.log('Datos del evento recibidos:', eventoData); // Para debugging
-        
-        if (!eventoData) return;
-
-        displayEventoDetalle(eventoData);
-        setupReservaForm(eventoData);
-
-       
-        const userData = JSON.parse(localStorage.getItem('user'));
-        if (userData && userData.rol === 'organizador' && eventoData.organizador_id === userData.id) {
-            document.getElementById('lista-asistentes').style.display = 'block';
-            loadAsistentes(eventoId);
-        }
-    } catch (error) {
-        console.error('Error cargando evento:', error);
-    }
-}
-
-function setupReservaForm(evento) {
-    const form = document.getElementById('reserva-form');
-    const cantidadInput = document.getElementById('cantidad');
-    
-    if (!form || !cantidadInput) return;
-
-    cantidadInput.max = evento.max_entradas_por_persona || 1;
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        try {
-            const cantidad = parseInt(cantidadInput.value);
-            const response = await fetchDataWithAuth(
-                `${BASEURL}/reservas`,
-                'POST',
-                {
-                    evento_id: evento.id,
-                    cantidad_entradas: cantidad
-                }
-            );
-
-            if (response) {
-                Swal.fire({
-                    title: '¡Reserva exitosa!',
-                    html: `Tu código de acceso es: <strong>${response.codigo}</strong><br>
-                          Guárdalo para presentarlo el día del evento`,
-                    icon: 'success'
-                }).then(() => {
-                    window.location.href = 'panel-usuario.html';
-                });
-            }
-        } catch (error) {
-            console.error('Error en la reserva:', error);
+        const evento = await fetchDataWithAuth(`${BASEURL}/eventos/${eventoId}`, 'GET');
+        if (!evento) {
+            console.log('No se encontró el evento');
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'No se pudo procesar la reserva'
+                text: 'No se pudo encontrar el evento'
+            }).then(() => {
+                window.location.href = 'eventos.html';
             });
+            return;
         }
-    });
-}
 
-async function loadAsistentes(eventoId) {
-    try {
-        const asistentes = await fetchDataWithAuth(
-            `${BASEURL}/eventos/${eventoId}/asistentes`,
-            'GET'
-        );
-        if (!asistentes) return;
-
-        const container = document.getElementById('asistentes-container');
-        container.innerHTML = asistentes.map(asistente => `
-            <div class="asistente-card">
-                <p><strong>Nombre:</strong> ${asistente.nombre}</p>
-                <p><strong>Email:</strong> ${asistente.email}</p>
-                <p><strong>Cantidad:</strong> ${asistente.cantidad_entradas}</p>
-                <p><strong>Código:</strong> ${asistente.codigo}</p>
-                <p><strong>Estado:</strong> ${asistente.confirmado ? 'Confirmado' : 'Pendiente'}</p>
-                ${asistente.confirmado ? `<p><strong>Confirmado por:</strong> ${asistente.recepcionista_nombre}</p>` : ''}
-            </div>
-        `).join('');
+        displayEventoDetalle(evento);
     } catch (error) {
-        console.error('Error cargando asistentes:', error);
+        console.error('Error cargando evento:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al cargar los datos del evento'
+        });
     }
 }
 
+
+function mostrarFormularioReserva() {
+    const formulario = document.getElementById('formulario-reserva');
+    formulario.style.display = 'block';
+    
+
+    const form = document.getElementById('form-reserva');
+    form.addEventListener('submit', handleReserva);
+}
+
+
+async function handleReserva(event) {
+    event.preventDefault();
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventoId = urlParams.get('id');
+    const cantidad = document.getElementById('cantidad').value;
+
+    try {
+        const reservaData = {
+            evento_id: parseInt(eventoId),
+            cantidad_entradas: parseInt(cantidad)
+        };
+
+        const response = await fetchDataWithAuth(`${BASEURL}/reservas`, 'POST', reservaData);
+        
+        if (response && response.codigo) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Reserva exitosa!',
+                html: `
+                    <p>Tu reserva ha sido confirmada.</p>
+                    <p>Tu código de acceso es: <strong>${response.codigo}</strong></p>
+                    <p>Guarda este código, lo necesitarás para el evento.</p>
+                `,
+                confirmButtonText: 'Ir a mis reservas'
+            }).then(() => {
+                window.location.href = 'panel-usuario.html';
+            });
+        }
+    } catch (error) {
+        console.error('Error en la reserva:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo procesar la reserva'
+        });
+    }
+}
+
+
+async function toggleFavorito(eventoId) {
+    try {
+        const response = await fetchDataWithAuth(`${BASEURL}/eventos/${eventoId}/favorito`, 'POST');
+        if (response) {
+   
+            loadEventoDetalle();
+        }
+    } catch (error) {
+        console.error('Error toggle favorito:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo actualizar favoritos'
+        });
+    }
+}
+
+// Inicialización
 document.addEventListener('DOMContentLoaded', loadEventoDetalle);

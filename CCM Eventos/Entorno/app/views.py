@@ -223,26 +223,46 @@ def get_evento(current_user, evento_id):
     try:
         db = get_db()
         cursor = db.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT e.*, s.nombre as salon_nombre, c.nombre as categoria_nombre,
-                   u.nombre as organizador_nombre, re.usuario_id as organizador_id
+        
+        query = """
+            SELECT 
+                e.*,
+                s.nombre as salon_nombre,
+                c.nombre as categoria_nombre,
+                u.nombre as organizador_nombre,
+                CASE 
+                    WHEN ef.id IS NOT NULL THEN true 
+                    ELSE false 
+                END as es_favorito
             FROM eventos e
-            JOIN salones s ON e.salon_id = s.id
-            JOIN categorias c ON e.categoria_id = c.id
-            JOIN roles_evento re ON e.id = re.evento_id AND re.rol = 'organizador'
-            JOIN usuarios u ON re.usuario_id = u.id
+            LEFT JOIN salones s ON e.salon_id = s.id
+            LEFT JOIN categorias c ON e.categoria_id = c.id
+            LEFT JOIN roles_evento re ON e.id = re.evento_id AND re.rol = 'organizador'
+            LEFT JOIN usuarios u ON re.usuario_id = u.id
+            LEFT JOIN eventos_favoritos ef ON e.id = ef.evento_id AND ef.usuario_id = %s
             WHERE e.id = %s
-        """, (evento_id,))
+        """
+        
+        print("Ejecutando query:", query) 
+        print("Params:", current_user.id, evento_id) 
+        
+        cursor.execute(query, (current_user.id, evento_id))
         evento = cursor.fetchone()
         cursor.close()
         
         if not evento:
             return jsonify({'message': 'Evento no encontrado'}), 404
-        
+            
+       
+        if evento.get('fecha'):
+            evento['fecha'] = evento['fecha'].strftime('%Y-%m-%d')
+            
+        print("Evento encontrado:", evento) 
         return jsonify(evento)
+        
     except Exception as e:
-        print(f"Error getting evento: {str(e)}")
-        return jsonify({'message': 'Error al obtener el evento'}), 500
+        print(f"Error en get_evento: {str(e)}")
+        return jsonify({'message': f'Error obteniendo evento: {str(e)}'}), 500
 
 @token_required
 def update_evento(current_user, evento_id):

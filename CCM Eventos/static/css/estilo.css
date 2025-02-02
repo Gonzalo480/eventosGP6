@@ -1,15 +1,15 @@
 /* style.css */
 :root {
-    --primary: #6B46C1;    /* Violeta principal */
-    --primary-dark: #553C9A;  /* Violeta oscuro para hover */
-    --primary-light: #9F7AEA; /* Violeta claro para acentos */
-    --black: #1A1A1A;      /* Negro suave */
-    --white: #FFFFFF;      /* Blanco */
-    --gray: #E2E8F0;       /* Gris claro para bordes */
+    --primary: #6B46C1; 
+    --primary-dark: #553C9A; 
+    --primary-light: #9F7AEA;
+    --black: #1A1A1A;    
+    --white: #FFFFFF;     
+    --gray: #E2E8F0;  
     --font-main: 'Arial', sans-serif;
 }
 
-/* Reset básico */
+
 * {
     margin: 0;
     padding: 0;
@@ -23,7 +23,7 @@ body {
     background-color: var(--white);
 }
 
-/* Container */
+
 .container {
     width: 90%;
     max-width: 1200px;
@@ -68,7 +68,7 @@ header a:hover{
     color: blueviolet;
 }
 
-/* Botones */
+
 .btn-1, .btn-2 {
     padding: 0.8rem 1.5rem;
     border: none;
@@ -97,7 +97,7 @@ header a:hover{
     background-color: var(--gray);
 }
 
-/* Formularios */
+
 .form-group {
     margin-bottom: 2rem;
 }
@@ -127,7 +127,7 @@ header a:hover{
     box-shadow: 0 0 0 2px var(--primary-light);
 }
 
-/* Grid de eventos */
+
 .eventos-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
@@ -174,7 +174,7 @@ header a:hover{
     color: var(--black);
 }
 
-/* Filtros */
+
 .search-filters {
     display: flex;
     gap: 1rem;
@@ -190,7 +190,7 @@ header a:hover{
     min-width: 200px;
 }
 
-/* Mensajes */
+
 .no-results {
     text-align: center;
     padding: 2rem;
@@ -199,7 +199,7 @@ header a:hover{
     margin: 2rem 0;
 }
 
-/* Estilos para el panel de usuario */
+
 .user-info {
     background-color: var(--primary);
     color: var(--white);
@@ -216,7 +216,7 @@ header a:hover{
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Responsividad */
+
 @media (max-width: 768px) {
     .menu {
         flex-direction: column;
