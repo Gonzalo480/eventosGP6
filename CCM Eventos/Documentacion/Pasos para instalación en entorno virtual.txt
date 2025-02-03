@@ -1,0 +1,13 @@
+Pasos para instalación en entorno virtual
+
+se crea el entorno en el directorio venv
+
+python -m venv venv
+
+Instalar las librerías
+
+
+python.exe -m pip install --upgrade pip
+pip install -r requirements.txt
+
+activar venv\Scripts\activate

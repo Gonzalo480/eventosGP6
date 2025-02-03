@@ -31,6 +31,13 @@ class Usuario:
             self.id = cursor.lastrowid
         db.commit()
         cursor.close()
+        
+    def check_password(self, password):
+        try:
+            return check_password_hash(self.password, password)
+        except Exception as e:
+            print(f"Error checking password: {str(e)}")
+            return False
 
     @staticmethod
     def get_by_id(user_id):

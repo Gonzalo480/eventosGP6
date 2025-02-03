@@ -156,12 +156,13 @@ async function cancelarReserva(reservaId) {
     if (result.isConfirmed) {
         const response = await fetchDataWithAuth(`${BASEURL}/reservas/${reservaId}`, 'DELETE');
         if (response) {
-            Swal.fire(
-                'Cancelada',
-                'La reserva ha sido cancelada',
-                'success'
-            );
-            cargarReservas(); 
+            Swal.fire({
+                title: 'Éxito',
+                text: 'Reserva cancelada correctamente',
+                icon: 'success'
+            }).then(() => {
+                window.location.reload();
+            });
         }
     }
 }

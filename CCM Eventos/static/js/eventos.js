@@ -1,13 +1,8 @@
-// eventos.js
 const BASEURL = 'http://127.0.0.1:5000/api';
 let eventosData = [];
 
 async function fetchDataWithAuth(url, method, data = null) {
-    console.log('Fetching:', url, method);
-    
     const token = localStorage.getItem('token');
-    console.log('Token:', token ? 'Presente' : 'No presente');
-    
     if (!token) {
         window.location.href = 'login.html';
         return null;
@@ -26,12 +21,9 @@ async function fetchDataWithAuth(url, method, data = null) {
     }
 
     try {
-        console.log('Fetch options:', options);
         const response = await fetch(url, options);
-        console.log('Response status:', response.status);
         
         if (response.status === 401) {
-            console.log('Unauthorized - redirecting to login');
             localStorage.removeItem('token');
             window.location.href = 'login.html';
             return null;
@@ -41,11 +33,8 @@ async function fetchDataWithAuth(url, method, data = null) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
-        console.log('Response data:', data);
-        return data;
+        return await response.json();
     } catch (error) {
-        console.error('Fetch error:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -55,13 +44,9 @@ async function fetchDataWithAuth(url, method, data = null) {
     }
 }
 
-
 async function loadCategorias() {
-    console.log('Cargando categorías...');
     try {
         const categorias = await fetchDataWithAuth(`${BASEURL}/categorias`, 'GET');
-        console.log('Categorías recibidas:', categorias);
-        
         if (categorias) {
             const select = document.querySelector('#filter-categoria');
             if (select) {
@@ -75,18 +60,30 @@ async function loadCategorias() {
             }
         }
     } catch (error) {
-        console.error('Error cargando categorías:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al cargar las categorías'
+        });
     }
 }
 
-function formatDate(dateString) {
-    const options = { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    };
-    return new Date(dateString).toLocaleDateString('es-ES', options);
+function formatDateToISO(dateString) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function formatDateForDisplay(dateString) {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    }).format(date);
 }
 
 function formatCurrency(amount) {
@@ -97,36 +94,36 @@ function formatCurrency(amount) {
 }
 
 async function loadEventos() {
-    console.log('Iniciando carga de eventos');
     try {
         const eventos = await fetchDataWithAuth(`${BASEURL}/eventos`, 'GET');
-        console.log('Eventos recibidos:', eventos);
-        
-        if (!eventos) {
-            console.log('No se recibieron eventos');
-            return;
+        if (eventos) {
+            eventosData = eventos;
+            displayEventos(eventosData);
         }
-
-        eventosData = eventos;
-        console.log('Eventos guardados en eventosData:', eventosData);
-        displayEventos(eventosData);
     } catch (error) {
-        console.error('Error loading eventos:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al cargar los eventos'
+        });
     }
 }
 
 function filterEventos() {
     const nombre = document.querySelector('#search-nombre')?.value.toLowerCase() || '';
     const categoria = document.querySelector('#filter-categoria')?.value || '';
-    const fecha = document.querySelector('#filter-fecha')?.value || '';
+    const fechaInput = document.querySelector('#filter-fecha')?.value || '';
     const precioMin = parseFloat(document.querySelector('#filter-precio-min')?.value) || 0;
     const precioMax = parseFloat(document.querySelector('#filter-precio-max')?.value) || Infinity;
 
     const eventosFiltrados = eventosData.filter(evento => {
+        const fechaEvento = formatDateToISO(evento.fecha);
+        
         const cumpleNombre = evento.nombre.toLowerCase().includes(nombre);
-        const cumpleCategoria = !categoria || evento.categoria_id === parseInt(categoria);
-        const cumpleFecha = !fecha || evento.fecha === fecha;
-        const cumplePrecio = evento.precio >= precioMin && evento.precio <= precioMax;
+        const cumpleCategoria = !categoria || evento.categoria_id.toString() === categoria;
+        const cumpleFecha = !fechaInput || fechaEvento === fechaInput;
+        const cumplePrecio = (!precioMin || evento.precio >= precioMin) && 
+                            (!precioMax || evento.precio <= precioMax);
 
         return cumpleNombre && cumpleCategoria && cumpleFecha && cumplePrecio;
     });
@@ -134,60 +131,22 @@ function filterEventos() {
     displayEventos(eventosFiltrados);
 }
 
-function displayEventos(eventos) {
-    console.log('Mostrando eventos:', eventos);
-    const container = document.querySelector('#eventos-container');
-    
-    if (!container) {
-        console.error('No se encontró el contenedor de eventos');
-        return;
-    }
-
-    container.innerHTML = '';
-
-    if (!eventos || eventos.length === 0) {
-        console.log('No hay eventos para mostrar');
-        container.innerHTML = `
-            <div class="no-results">
-                <p>No se encontraron eventos.</p>
-            </div>`;
-        return;
-    }
-
-    eventos.forEach(evento => {
-        try {
-            console.log('Procesando evento:', evento);
-            const eventoElement = createEventoElement(evento);
-            if (eventoElement) {
-                container.appendChild(eventoElement);
-            }
-        } catch (error) {
-            console.error('Error al crear elemento de evento:', error);
-        }
-    });
-}
-
 function createEventoElement(evento) {
     const template = document.querySelector('#evento-template');
-    if (!template) {
-        console.error('No se encontró el template de evento');
-        return null;
-    }
+    if (!template) return null;
 
     try {
         const clone = template.content.cloneNode(true);
 
-    
         const img = clone.querySelector('.evento-imagen img');
         if (img) {
             img.src = evento.imagen_url || '../static/img/default-evento.jpg';
             img.alt = evento.nombre || 'Imagen del evento';
         }
 
-   
         const elementos = {
             '.evento-titulo': evento.nombre || 'Sin título',
-            '.evento-fecha': evento.fecha ? formatDate(evento.fecha) : 'Fecha no especificada',
+            '.evento-fecha': evento.fecha ? formatDateForDisplay(evento.fecha) : 'Fecha no especificada',
             '.evento-horario': `Horario: ${evento.horario || 'No especificado'}`,
             '.evento-salon': `Salón: ${evento.salon_nombre || 'No especificado'}`,
             '.evento-categoria': `Categoría: ${evento.categoria_nombre || 'Sin categoría'}`,
@@ -201,7 +160,6 @@ function createEventoElement(evento) {
             }
         });
 
-     
         const verMasBtn = clone.querySelector('.ver-mas');
         if (verMasBtn) {
             verMasBtn.addEventListener('click', () => {
@@ -211,47 +169,66 @@ function createEventoElement(evento) {
 
         return clone;
     } catch (error) {
-        console.error('Error al crear elemento de evento:', error);
         return null;
     }
 }
 
+function displayEventos(eventos) {
+    const container = document.querySelector('#eventos-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!eventos || eventos.length === 0) {
+        container.innerHTML = `
+            <div class="no-results">
+                <p>No se encontraron eventos.</p>
+            </div>`;
+        return;
+    }
+
+    eventos.forEach(evento => {
+        const eventoElement = createEventoElement(evento);
+        if (eventoElement) {
+            container.appendChild(eventoElement);
+        }
+    });
+}
+
+function clearFilters() {
+    const elements = ['#search-nombre', '#filter-categoria', '#filter-fecha', 
+                     '#filter-precio-min', '#filter-precio-max'];
+    
+    elements.forEach(selector => {
+        const element = document.querySelector(selector);
+        if (element) element.value = '';
+    });
+
+    displayEventos(eventosData);
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOM Cargado, iniciando...');
-    
-
     const token = localStorage.getItem('token');
-    console.log('Token en localStorage:', token ? 'Presente' : 'Ausente');
-    
     if (!token) {
         window.location.href = 'login.html';
         return;
     }
 
     try {
-       
-        await Promise.all([
-            loadEventos(),
-            loadCategorias()
-        ]);
+        await Promise.all([loadEventos(), loadCategorias()]);
         
-     
-        const btnSearch = document.querySelector('#btn-search');
-        const btnReset = document.querySelector('#btn-reset');
+        document.querySelector('#filter-fecha')?.addEventListener('change', filterEventos);
+        document.querySelector('#filter-categoria')?.addEventListener('change', filterEventos);
+        document.querySelector('#search-nombre')?.addEventListener('input', filterEventos);
+        document.querySelector('#filter-precio-min')?.addEventListener('input', filterEventos);
+        document.querySelector('#filter-precio-max')?.addEventListener('input', filterEventos);
+        document.querySelector('#btn-reset')?.addEventListener('click', clearFilters);
         
-        if (btnSearch) {
-            btnSearch.addEventListener('click', filterEventos);
-        }
-        
-        if (btnReset) {
-            btnReset.addEventListener('click', () => {
-             
-                document.querySelectorAll('.input-search').forEach(input => input.value = '');
-                displayEventos(eventosData);
-            });
-        }
     } catch (error) {
-        console.error('Error en la inicialización:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al inicializar la página'
+        });
     }
 });

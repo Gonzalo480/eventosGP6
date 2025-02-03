@@ -35,7 +35,8 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <input type="date" id="filter-fecha" class="input-search">
+                    <input type="date" id="filter-fecha" class="input-search" pattern="\d{4}-\d{2}-\d{2}">
+
                 </div>
                 <div class="filter-group">
                     <input type="number" id="filter-precio-min" placeholder="Precio mínimo" class="input-search">
@@ -68,7 +69,6 @@
                 <p class="evento-precio"></p>
                 <div class="evento-acciones">
                     <button class="btn-1 ver-mas">Ver más</button>
-                    <button class="btn-2 favorito">❤</button>
                 </div>
             </div>
         </article>

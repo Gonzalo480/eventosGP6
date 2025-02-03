@@ -3,7 +3,7 @@ from app.models import Usuario, Evento
 from app.database import get_db
 from functools import wraps
 import jwt
-import datetime
+from datetime import datetime, timedelta
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
@@ -82,32 +82,33 @@ def login():
         return handle_options_request()
     
     try:
-        data = request.json
-        db = get_db()
-        cursor = db.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM usuarios WHERE email = %s", (data['email'],))
-        user = cursor.fetchone()
-        cursor.close()
+        data = request.get_json()
+        
+        if not data or 'email' not in data or 'password' not in data:
+            return jsonify({'message': 'Datos incompletos'}), 400
 
-        if user and check_password_hash(user['password'], data['password']):
-            token = jwt.encode({
-                'email': user['email'],
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
-            }, str(os.getenv('SECRET_KEY')), algorithm="HS256")
-            
-            return jsonify({
-                'token': token,
-                'user': {
-                    'id': user['id'],
-                    'nombre': user['nombre'],
-                    'email': user['email'],
-                    'es_admin': user['es_admin']
-                }
-            })
-        return jsonify({'message': 'Credenciales inválidas'}), 401
+        user = Usuario.get_by_email(data['email'])
+        
+        if not user:
+            return jsonify({'message': 'Usuario no encontrado'}), 401
+
+        if not user.check_password(data['password']):
+            return jsonify({'message': 'Contraseña incorrecta'}), 401
+
+        # Generar token
+        token = jwt.encode({
+            'email': user.email,
+            'exp': datetime.utcnow() + timedelta(days=1)
+        }, str(os.getenv('SECRET_KEY')), algorithm="HS256")
+        
+        return jsonify({
+            'token': token,
+            'user': user.serialize()
+        })
+        
     except Exception as e:
         print(f"Login error: {str(e)}")
-        return jsonify({'message': 'Error en el login'}), 500
+        return jsonify({'message': 'Error en el proceso de login'}), 500
 
 
 def get_eventos_publicos():
@@ -165,35 +166,59 @@ def crear_evento(current_user):
     
     try:
         data = request.json
+        print("Datos recibidos:", data)
+        required_fields = ['nombre', 'fecha', 'horario', 'salon_id', 
+                         'categoria_id', 'contacto_responsable']
+        
+        if not data or not all(key in data for key in required_fields):
+            return jsonify({'message': 'Faltan campos requeridos'}), 400
+
         db = get_db()
         cursor = db.cursor()
-        
-     
-        cursor.execute("""
-            INSERT INTO eventos (nombre, fecha, horario, salon_id, precio,
-                               descripcion, imagen_url, contacto_responsable,
-                               categoria_id, max_entradas_por_persona)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (data['nombre'], data['fecha'], data['horario'], data['salon_id'],
-              data['precio'], data['descripcion'], data['imagen_url'],
-              data['contacto_responsable'], data['categoria_id'],
-              data.get('max_entradas_por_persona', 1)))
-        
+
+        insert_query = """
+            INSERT INTO eventos (
+                nombre, fecha, horario, salon_id, categoria_id,
+                precio, estado, imagen_url, descripcion, contacto_responsable
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            )
+        """
+        evento_data = (
+            data['nombre'],
+            data['fecha'],
+            data['horario'],
+            data['salon_id'],
+            data['categoria_id'],
+            data.get('precio', 0.00),
+            'activo', 
+            data.get('imagen_url', ''),
+            data.get('descripcion', ''),
+            data['contacto_responsable']
+        )
+
+        cursor.execute(insert_query, evento_data)
         evento_id = cursor.lastrowid
-        
-       
-        cursor.execute("""
-            INSERT INTO roles_evento (usuario_id, evento_id, rol)
-            VALUES (%s, %s, 'organizador')
-        """, (current_user.id, evento_id))
-        
+
+ 
+        if evento_id:
+            cursor.execute("""
+                INSERT INTO roles_evento (usuario_id, evento_id, rol)
+                VALUES (%s, %s, %s)
+            """, (current_user.id, evento_id, 'organizador'))
+
         db.commit()
         cursor.close()
-        
-        return jsonify({'message': 'Evento creado exitosamente', 'id': evento_id}), 201
+
+        return jsonify({
+            'message': 'Evento creado exitosamente',
+            'evento_id': evento_id
+        }), 201
+
     except Exception as e:
-        print(f"Error creating event: {str(e)}")
-        return jsonify({'message': 'Error al crear el evento'}), 500
+        print(f"Error al crear evento: {str(e)}")  
+        db.rollback() if 'db' in locals() else None
+        return jsonify({'message': f'Error al crear el evento: {str(e)}'}), 500
 
 @token_required
 def get_eventos(current_user):
@@ -421,41 +446,49 @@ def crear_reserva(current_user):
 
 @token_required
 def cancelar_reserva(current_user, reserva_id):
+    if request.method == 'OPTIONS':
+        return handle_options_request()
+    
     try:
         db = get_db()
         cursor = db.cursor(dictionary=True)
         
-       
+        # Verificar que la reserva existe y pertenece al usuario
         cursor.execute("""
             SELECT r.*, e.fecha 
             FROM reservas r
             JOIN eventos e ON r.evento_id = e.id
             WHERE r.id = %s AND r.usuario_id = %s
         """, (reserva_id, current_user.id))
+        
         reserva = cursor.fetchone()
         
         if not reserva:
-            return jsonify({'message': 'Reserva no encontrada'}), 404
+            return jsonify({'message': 'Reserva no encontrada o no autorizada'}), 404
 
-      
-        fecha_evento = datetime.datetime.strptime(reserva['fecha'], '%Y-%m-%d')
-        limite_cancelacion = fecha_evento - datetime.timedelta(hours=24)
+        # Verificar si está dentro del plazo de cancelación (24 horas antes)
+        fecha_evento = datetime.strptime(str(reserva['fecha']), '%Y-%m-%d')
+        limite_cancelacion = fecha_evento - timedelta(hours=24)
         
-        if datetime.datetime.now() > limite_cancelacion:
-            return jsonify({'message': 'No se puede cancelar menos de 24 horas antes del evento'}), 400
+        if datetime.now() > limite_cancelacion:
+            return jsonify({
+                'message': 'No se puede cancelar la reserva menos de 24 horas antes del evento'
+            }), 400
 
+        # Cancelar la reserva
         cursor.execute("""
             UPDATE reservas 
             SET estado = 'cancelada'
-            WHERE id = %s
-        """, (reserva_id,))
+            WHERE id = %s AND usuario_id = %s
+        """, (reserva_id, current_user.id))
         
         db.commit()
         cursor.close()
         
         return jsonify({'message': 'Reserva cancelada exitosamente'})
+    
     except Exception as e:
-        print(f"Error canceling reservation: {str(e)}")
+        print(f"Error al cancelar reserva: {str(e)}")  # Para debugging
         return jsonify({'message': 'Error al cancelar la reserva'}), 500
 
 @token_required

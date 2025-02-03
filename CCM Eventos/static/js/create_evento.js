@@ -1,12 +1,7 @@
-// create_evento.js
 const BASEURL = 'http://127.0.0.1:5000/api';
 
 async function fetchDataWithAuth(url, method, data = null) {
-    console.log('Fetching:', url, method); 
-    
     const token = localStorage.getItem('token');
-    console.log('Token:', token ? 'Presente' : 'No presente');
-    
     if (!token) {
         window.location.href = 'login.html';
         return null;
@@ -25,15 +20,9 @@ async function fetchDataWithAuth(url, method, data = null) {
     }
 
     try {
-        console.log('Fetch options:', options); 
         const response = await fetch(url, options);
-        console.log('Response status:', response.status); 
-        
-        const responseData = await response.json();
-        console.log('Response data:', responseData); 
         
         if (response.status === 401) {
-            console.log('Unauthorized - redirecting to login'); 
             localStorage.removeItem('token');
             window.location.href = 'login.html';
             return null;
@@ -43,13 +32,12 @@ async function fetchDataWithAuth(url, method, data = null) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        return responseData;
+        return await response.json();
     } catch (error) {
-        console.error('Fetch error:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Error al cargar los datos. Por favor, intenta de nuevo.'
+            text: 'Error en la conexión con el servidor'
         });
         return null;
     }
@@ -57,32 +45,20 @@ async function fetchDataWithAuth(url, method, data = null) {
 
 async function loadSalones() {
     try {
-        console.log('Iniciando carga de salones...');
         const salones = await fetchDataWithAuth(`${BASEURL}/salones`, 'GET');
-        console.log('Salones recibidos:', salones);
-        
-        const select = document.querySelector('#salon');
-        if (!select) {
-            console.error('No se encontró el elemento select para salones');
-            return;
-        }
-
-        select.innerHTML = '<option value="">Seleccione salón</option>';
-        
-        if (Array.isArray(salones) && salones.length > 0) {
-            salones.forEach(salon => {
-                const option = document.createElement('option');
-                option.value = salon.id;
-                option.textContent = `${salon.nombre} (Capacidad: ${salon.capacidad})`;
-                select.appendChild(option);
-            });
-            console.log('Salones cargados en el select');
-        } else {
-            console.log('No se recibieron salones del servidor');
-            select.innerHTML = '<option value="">No hay salones disponibles</option>';
+        if (salones) {
+            const select = document.querySelector('#salon');
+            if (select) {
+                select.innerHTML = '<option value="">Seleccione salón</option>';
+                salones.forEach(salon => {
+                    const option = document.createElement('option');
+                    option.value = salon.id;
+                    option.textContent = `${salon.nombre} (Capacidad: ${salon.capacidad})`;
+                    select.appendChild(option);
+                });
+            }
         }
     } catch (error) {
-        console.error('Error cargando salones:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -93,32 +69,20 @@ async function loadSalones() {
 
 async function loadCategorias() {
     try {
-        console.log('Iniciando carga de categorías...');
         const categorias = await fetchDataWithAuth(`${BASEURL}/categorias`, 'GET');
-        console.log('Categorías recibidas:', categorias);
-        
-        const select = document.querySelector('#categoria');
-        if (!select) {
-            console.error('No se encontró el elemento select para categorías');
-            return;
-        }
-
-        select.innerHTML = '<option value="">Seleccione categoría</option>';
-        
-        if (Array.isArray(categorias) && categorias.length > 0) {
-            categorias.forEach(categoria => {
-                const option = document.createElement('option');
-                option.value = categoria.id;
-                option.textContent = categoria.nombre;
-                select.appendChild(option);
-            });
-            console.log('Categorías cargadas en el select');
-        } else {
-            console.log('No se recibieron categorías del servidor');
-            select.innerHTML = '<option value="">No hay categorías disponibles</option>';
+        if (categorias) {
+            const select = document.querySelector('#categoria');
+            if (select) {
+                select.innerHTML = '<option value="">Seleccione categoría</option>';
+                categorias.forEach(categoria => {
+                    const option = document.createElement('option');
+                    option.value = categoria.id;
+                    option.textContent = categoria.nombre;
+                    select.appendChild(option);
+                });
+            }
         }
     } catch (error) {
-        console.error('Error cargando categorías:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -127,165 +91,189 @@ async function loadCategorias() {
     }
 }
 
+async function loadEventoData(eventoId) {
+    try {
+        const evento = await fetchDataWithAuth(`${BASEURL}/eventos/${eventoId}`, 'GET');
+        if (evento) {
+            document.querySelector('#id-evento').value = evento.id;
+            document.querySelector('#nombre').value = evento.nombre;
+            document.querySelector('#fecha').value = evento.fecha;
+            document.querySelector('#horario').value = evento.horario;
+            document.querySelector('#salon').value = evento.salon_id;
+            document.querySelector('#categoria').value = evento.categoria_id;
+            document.querySelector('#precio').value = evento.precio;
+            document.querySelector('#descripcion').value = evento.descripcion;
+            document.querySelector('#imagen').value = evento.imagen_url;
+            document.querySelector('#contacto').value = evento.contacto_responsable;
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al cargar los datos del evento'
+        });
+    }
+}
+
+function validateForm() {
+    const required = ['nombre', 'fecha', 'horario', 'salon', 'categoria', 'contacto'];
+    const missing = required.filter(field => !document.querySelector(`#${field}`).value);
+    
+    if (missing.length > 0) {
+        Swal.fire({
+            title: 'Error',
+            text: 'Por favor complete todos los campos requeridos',
+            icon: 'error'
+        });
+        return false;
+    }
+
+    const fechaEvento = new Date(document.querySelector('#fecha').value);
+    const fechaActual = new Date();
+    fechaActual.setHours(0, 0, 0, 0);
+
+    if (fechaEvento <= fechaActual) {
+        Swal.fire({
+            title: 'Error',
+            text: 'La fecha debe ser posterior a la fecha actual',
+            icon: 'error'
+        });
+        return false;
+    }
+
+    return true;
+}
+
 async function saveEvento(event) {
     event.preventDefault();
-    console.log('Iniciando guardado de evento...'); 
 
     try {
-      
-        const fechaEvento = new Date(document.querySelector('#fecha').value);
-        const fechaActual = new Date();
+        // Validar campos requeridos
+        const camposRequeridos = ['nombre', 'fecha', 'horario', 'salon', 'categoria', 'contacto'];
+        let camposFaltantes = [];
 
-        if (fechaEvento <= fechaActual) {
-            Swal.fire({
-                title: 'Error',
-                text: 'La fecha debe ser posterior a la fecha actual',
-                icon: 'error'
-            });
-            return;
-        }
-
-      
-        const camposRequeridos = ['nombre', 'fecha', 'horario', 'salon', 'categoria', 'precio'];
-        let faltanCampos = false;
-        
         camposRequeridos.forEach(campo => {
             const elemento = document.querySelector(`#${campo}`);
-            if (!elemento.value) {
-                faltanCampos = true;
-                elemento.classList.add('error');
-            } else {
-                elemento.classList.remove('error');
+            if (!elemento || !elemento.value.trim()) {
+                camposFaltantes.push(campo);
             }
         });
 
-        if (faltanCampos) {
+        if (camposFaltantes.length > 0) {
             Swal.fire({
-                title: 'Error',
-                text: 'Por favor complete todos los campos requeridos',
-                icon: 'error'
+                icon: 'error',
+                title: 'Campos requeridos',
+                text: 'Por favor complete todos los campos obligatorios'
             });
             return;
         }
 
+        // Validar fecha
+        const fechaEvento = new Date(document.querySelector('#fecha').value);
+        const fechaActual = new Date();
+        fechaActual.setHours(0, 0, 0, 0);
+
+        if (fechaEvento <= fechaActual) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Fecha inválida',
+                text: 'La fecha debe ser posterior a hoy'
+            });
+            return;
+        }
+
+        // Preparar datos del evento
         const eventoData = {
-            nombre: document.querySelector('#nombre').value,
+            nombre: document.querySelector('#nombre').value.trim(),
             fecha: document.querySelector('#fecha').value,
             horario: document.querySelector('#horario').value,
             salon_id: parseInt(document.querySelector('#salon').value),
             categoria_id: parseInt(document.querySelector('#categoria').value),
-            precio: parseFloat(document.querySelector('#precio').value),
-            descripcion: document.querySelector('#descripcion').value,
-            imagen_url: document.querySelector('#imagen').value,
-            contacto_responsable: document.querySelector('#contacto').value
+            precio: parseFloat(document.querySelector('#precio').value) || 0,
+            descripcion: document.querySelector('#descripcion').value.trim(),
+            imagen_url: document.querySelector('#imagen').value.trim() || '',
+            contacto_responsable: document.querySelector('#contacto').value.trim()
         };
-
-        console.log('Datos del evento a guardar:', eventoData); 
 
         const idEvento = document.querySelector('#id-evento').value;
         const method = idEvento ? 'PUT' : 'POST';
         const url = idEvento ? `${BASEURL}/eventos/${idEvento}` : `${BASEURL}/eventos`;
 
         const response = await fetchDataWithAuth(url, method, eventoData);
-        console.log('Respuesta del servidor:', response); 
 
         if (response) {
-            Swal.fire({
+            await Swal.fire({
+                icon: 'success',
                 title: 'Éxito',
-                text: idEvento ? 'Evento actualizado correctamente' : 'Evento creado correctamente',
-                icon: 'success'
-            }).then(() => {
-                window.location.href = 'eventos.html';
+                text: idEvento ? 'Evento actualizado correctamente' : 'Evento creado correctamente'
             });
+            
+            // Redireccionar a la lista de eventos
+            window.location.href = 'eventos.html';
         }
     } catch (error) {
-        console.error('Error guardando evento:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Error al guardar el evento'
+            text: 'Error al guardar el evento. Por favor, intente nuevamente.'
         });
+        console.error('Error al guardar evento:', error);
     }
 }
 
-async function loadEventoData() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const eventoId = urlParams.get('id');
-
-    if (eventoId) {
-        try {
-            console.log('Cargando datos del evento:', eventoId); 
-            const evento = await fetchDataWithAuth(`${BASEURL}/eventos/${eventoId}`, 'GET');
-            if (!evento) return;
-
-            console.log('Datos del evento recibidos:', evento); 
-       
-            const campos = {
-                'id-evento': evento.id,
-                'nombre': evento.nombre,
-                'fecha': evento.fecha,
-                'horario': evento.horario,
-                'salon': evento.salon_id,
-                'categoria': evento.categoria_id,
-                'precio': evento.precio,
-                'descripcion': evento.descripcion,
-                'imagen': evento.imagen_url,
-                'contacto': evento.contacto_responsable
-            };
-
-            Object.entries(campos).forEach(([id, valor]) => {
-                const elemento = document.querySelector(`#${id}`);
-                if (elemento) {
-                    elemento.value = valor;
-                }
-            });
-
-            console.log('Formulario actualizado con datos del evento'); 
-        } catch (error) {
-            console.error('Error cargando datos del evento:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Error al cargar los datos del evento'
-            });
-        }
-    }
-}
-
-
+// Event listener para el formulario
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOM Cargado, iniciando...'); 
-    
     try {
-      
         const token = localStorage.getItem('token');
         if (!token) {
-            console.log('No hay token, redirigiendo a login');
             window.location.href = 'login.html';
             return;
         }
-        console.log('Token encontrado');
 
-  
-        console.log('Iniciando carga de datos...');
-        await Promise.all([
-            loadSalones(),
-            loadCategorias()
-        ]);
+        // Cargar datos necesarios
+        await Promise.all([loadSalones(), loadCategorias()]);
 
-    
-        await loadEventoData();
+        // Verificar si es edición y cargar datos
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventoId = urlParams.get('id');
+        if (eventoId) {
+            await loadEventoData(eventoId);
+        }
 
-   
+        // Asignar evento al formulario
         const form = document.querySelector('#form-evento');
         if (form) {
             form.addEventListener('submit', saveEvento);
-            console.log('Formulario configurado');
-        } else {
-            console.error('No se encontró el formulario');
         }
     } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al inicializar el formulario'
+        });
         console.error('Error en la inicialización:', error);
+    }
+});
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        await Promise.all([loadSalones(), loadCategorias()]);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventoId = urlParams.get('id');
+        if (eventoId) {
+            await loadEventoData(eventoId);
+        }
+
+        document.querySelector('#form-evento').addEventListener('submit', saveEvento);
+    } catch (error) {
         Swal.fire({
             icon: 'error',
             title: 'Error',
