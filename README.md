@@ -1,3 +1,5 @@
+contraseña para usuarios en BD: password
+
 # Plataforma de Gestión de Eventos Locales
 Carmen Valdez, directora del Centro Cultural Municipal, se comunicó con el equipo de
 desarrollo para solicitar el diseño de una plataforma que permita gestionar los diversos
